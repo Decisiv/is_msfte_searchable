@@ -27,6 +27,9 @@ describe IsMsfteSearchable::ActiveRecordMixin do
       @connection ||= FakeConnection.new
     end
 
+    def self.scope(name, callable)
+    end
+
     include IsMsfteSearchable::ActiveRecordExtension
   end
 
@@ -34,18 +37,6 @@ describe IsMsfteSearchable::ActiveRecordMixin do
     model = Class.new(FakeActiveRecord)
     model.is_msfte_searchable
     model
-  end
-
-  it "shouldn't leak from model to model" do
-    model1 = Class.new(FakeActiveRecord)
-    model2 = Class.new(FakeActiveRecord)
-    model1.is_msfte_searchable
-    model2.is_msfte_searchable
-    model1.msfte_change_tracking.must_equal true
-    model2.msfte_change_tracking.must_equal true
-    model1.msfte_change_tracking = false
-    model1.msfte_change_tracking.must_equal false
-    model2.msfte_change_tracking.must_equal true
   end
 
   describe "adds msfte_setup class method" do
@@ -144,7 +135,7 @@ describe IsMsfteSearchable::ActiveRecordMixin do
     end
   end
 
-  describe "adds msfte_search_string method" do
+  describe "adds msfte_search_string class method" do
     it "that exists" do
       model.must_respond_to(:msfte_search_string)
     end
@@ -157,5 +148,4 @@ describe IsMsfteSearchable::ActiveRecordMixin do
       model.msfte_search_string('term1 term2 ', 'OR').must_equal "'\"term1 *\" OR \"term2 *\"'"
     end
   end
-
 end

@@ -73,41 +73,41 @@ module IsMsfteSearchable
       class_eval do
         scope :msfte_with_phrase, lambda { |query|
           return {} if query.blank?
-          { :conditions => "#{table_name}.#{primary_key} IN (SELECT [KEY_TBL].[KEY] FROM CONTAINSTABLE(#{msfte_table_name},*,#{msfte_search_string(query)}) AS KEY_TBL)" }
+          msfte_contains(msfte_search_string(query))
         }
 
         scope :msfte_with_any, lambda { |query|
           return {} if query.blank?
-          { :conditions => "#{table_name}.#{primary_key} IN (SELECT [KEY_TBL].[KEY] FROM CONTAINSTABLE(#{msfte_table_name},*,#{msfte_search_string(query,'OR')}) AS KEY_TBL)" }
+          msfte_contains(msfte_search_string(query, 'OR'))
         }
 
         scope :msfte_with_all, lambda { |query|
           return {} if query.blank?
-          { :conditions => "#{table_name}.#{primary_key} IN (SELECT [KEY_TBL].[KEY] FROM CONTAINSTABLE(#{msfte_table_name},*,#{msfte_search_string(query,'AND')}) AS KEY_TBL)" }
+          msfte_contains(msfte_search_string(query, 'AND'))
         }
 
         scope :msfte_with_booleans, lambda { |query|
           return {} if query.blank?
-          { :conditions => ["#{table_name}.#{primary_key} IN (SELECT [KEY_TBL].[KEY] FROM CONTAINSTABLE(#{msfte_table_name},*,?) AS KEY_TBL)",query] }
+          msfte_contains(query, :quote => true)
         }
 
         msfte_columns.each do |c|
           scope "msfte_#{c}_with_any".to_sym, lambda { |query|
             return {} if query.blank?
-            return msfte_like_bailout(c,query) if Rails.env.test?
-            { :conditions => "#{table_name}.#{primary_key} IN (SELECT [KEY_TBL].[KEY] FROM CONTAINSTABLE(#{msfte_table_name},#{c},#{msfte_search_string(query,'OR')}) AS KEY_TBL)" }
+            return msfte_like_bailout(c, query) if Rails.env.test?
+            msfte_contains(msfte_search_string(query, 'OR'), :column => c)
           }
 
           scope "msfte_#{c}_with_all".to_sym, lambda { |query|
             return {} if query.blank?
-            return msfte_like_bailout(c,query) if Rails.env.test?
-            { :conditions => "#{table_name}.#{primary_key} IN (SELECT [KEY_TBL].[KEY] FROM CONTAINSTABLE(#{msfte_table_name},#{c},#{msfte_search_string(query,'AND')}) AS KEY_TBL)" }
+            return msfte_like_bailout(c, query) if Rails.env.test?
+            msfte_contains(msfte_search_string(query, 'AND'), :column => c)
           }
 
           scope "msfte_#{c}_with_booleans".to_sym, lambda { |query|
             return {} if query.blank?
-            return msfte_like_bailout(c,query) if Rails.env.test?
-            { :conditions => ["#{table_name}.#{primary_key} IN (SELECT [KEY_TBL].[KEY] FROM CONTAINSTABLE(#{msfte_table_name},#{c},?) AS KEY_TBL)",query] }
+            return msfte_like_bailout(c, query) if Rails.env.test?
+            msfte_contains(query, :column => c, :quote => true)
           }
         end
       end
@@ -118,6 +118,15 @@ module IsMsfteSearchable
 
       def msfte_like_bailout(column, query)
         { :conditions => "#{table_name}.#{column} LIKE '%#{msfte_quote(query)}%'" }
+      end
+
+      def msfte_contains(query, options = {})
+        column = options.fetch(:column, '*')
+        quote = options.fetch(:quote, false)
+        query_literal = quote ? '?' : query
+        condition = "#{table_name}.#{primary_key} IN (SELECT [KEY_TBL].[KEY] FROM CONTAINSTABLE(#{msfte_table_name},#{column},#{query_literal}) AS KEY_TBL)"
+        conditions = quote ? [condition, query] : condition
+        { :conditions => conditions }
       end
     end
   end

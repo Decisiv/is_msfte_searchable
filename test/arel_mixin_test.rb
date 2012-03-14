@@ -159,10 +159,9 @@ describe IsMsfteSearchable::ArelMixin do
         Person.must_respond_to(:msfte_name_with_booleans)
       end
 
-      # FIXME this looks like a bug, searching within * instead of name
       it "returns a scope searching for the query terms as given?" do
         Person.msfte_name_with_booleans('foo bar').to_sql.must_equal(
-          %{SELECT "people".* FROM "people"  WHERE (people.id IN (SELECT [KEY_TBL].[KEY] FROM CONTAINSTABLE(people,*,'foo bar') AS KEY_TBL))}
+          %{SELECT "people".* FROM "people"  WHERE (people.id IN (SELECT [KEY_TBL].[KEY] FROM CONTAINSTABLE(people,name,'foo bar') AS KEY_TBL))}
         )
       end
 
@@ -172,9 +171,7 @@ describe IsMsfteSearchable::ArelMixin do
         )
       end
 
-      # FIXME the omission of msfte_like_bailout here looks like a bug
       it "returns a scope using a LIKE query when Rails.env.test?" do
-        skip
         Rails.env.stubs(:test?).returns(true)
         Person.msfte_name_with_booleans('foo bar').to_sql.must_equal(
           %{SELECT "people".* FROM "people"  WHERE (people.name LIKE '%foo bar%')}

@@ -106,7 +106,8 @@ module IsMsfteSearchable
 
           scope "msfte_#{c}_with_booleans".to_sym, lambda { |query|
             return {} if query.blank?
-            { :conditions => ["#{table_name}.#{primary_key} IN (SELECT [KEY_TBL].[KEY] FROM CONTAINSTABLE(#{msfte_table_name},*,?) AS KEY_TBL)",query] }
+            return msfte_like_bailout(c,query) if Rails.env.test?
+            { :conditions => ["#{table_name}.#{primary_key} IN (SELECT [KEY_TBL].[KEY] FROM CONTAINSTABLE(#{msfte_table_name},#{c},?) AS KEY_TBL)",query] }
           }
         end
       end

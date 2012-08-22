@@ -16,6 +16,21 @@ module IsMsfteSearchable
         include IsMsfteSearchable::ActiveRecordMixin
         include IsMsfteSearchable::ArelMixin
       end
+
+      def msfte_column_indexed?(column)
+        sql_statement =
+          <<-stmt
+            select count(*)
+            from sys.fulltext_index_columns fic
+            inner join sys.columns c
+              on c.[object_id] = fic.[object_id]
+              and c.[column_id] = fic.[column_id]
+            where OBJECT_ID('#{table_name}') = fic.[object_id]
+            and name = '#{column}'
+          stmt
+        value = connection.select_value(sql_statement)
+        value.to_i == 1
+      end
     end
   end
 end

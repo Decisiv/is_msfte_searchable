@@ -24,6 +24,10 @@ end
 
 class Person < ActiveRecord::Base
   is_msfte_searchable(:columns => %w(name))
+
+  def self.msfte_column_indexed?(column)
+    column == "name"
+  end
 end
 
 # The SQL generated is courtesy of the sqlite adapter, so the whitespace and
@@ -122,7 +126,7 @@ describe IsMsfteSearchable::ArelMixin do
       end
 
       it "returns a scope using a LIKE query when Rails.env.test?" do
-        Rails.env.stubs(:test?).returns(true)
+        Person.stubs(:msfte_column_indexed?).returns(false)
         Person.msfte_name_with_any('foo bar').to_sql.must_equal(
           %{SELECT "people".* FROM "people"  WHERE (people.name LIKE '%foo bar%')}
         )
@@ -147,7 +151,7 @@ describe IsMsfteSearchable::ArelMixin do
       end
 
       it "returns a scope using a LIKE query when Rails.env.test?" do
-        Rails.env.stubs(:test?).returns(true)
+        Person.stubs(:msfte_column_indexed?).returns(false)
         Person.msfte_name_with_all('foo bar').to_sql.must_equal(
           %{SELECT "people".* FROM "people"  WHERE (people.name LIKE '%foo bar%')}
         )
@@ -172,12 +176,11 @@ describe IsMsfteSearchable::ArelMixin do
       end
 
       it "returns a scope using a LIKE query when Rails.env.test?" do
-        Rails.env.stubs(:test?).returns(true)
+        Person.stubs(:msfte_column_indexed?).returns(false)
         Person.msfte_name_with_booleans('foo bar').to_sql.must_equal(
           %{SELECT "people".* FROM "people"  WHERE (people.name LIKE '%foo bar%')}
         )
       end
     end
   end
-
 end

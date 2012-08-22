@@ -27,19 +27,19 @@ module IsMsfteSearchable
         msfte_columns.each do |c|
           scope "msfte_#{c}_with_any".to_sym, lambda { |query|
             return {} if query.blank?
-            return msfte_like_bailout(c, query) if Rails.env.test?
+            return msfte_like_bailout(c, query) unless msfte_column_indexed?(c)
             msfte_contains(msfte_search_string(query, 'OR'), :column => c)
           }
 
           scope "msfte_#{c}_with_all".to_sym, lambda { |query|
             return {} if query.blank?
-            return msfte_like_bailout(c, query) if Rails.env.test?
+            return msfte_like_bailout(c, query) unless msfte_column_indexed?(c)
             msfte_contains(msfte_search_string(query, 'AND'), :column => c)
           }
 
           scope "msfte_#{c}_with_booleans".to_sym, lambda { |query|
             return {} if query.blank?
-            return msfte_like_bailout(c, query) if Rails.env.test?
+            return msfte_like_bailout(c, query) unless msfte_column_indexed?(c)
             msfte_contains(query, :column => c, :quote => true)
           }
         end

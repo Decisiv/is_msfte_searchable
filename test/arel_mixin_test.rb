@@ -1,17 +1,5 @@
 require 'helper'
 
-class Rails
-  class Env
-    def self.test?
-      false
-    end
-  end
-
-  def self.env
-    Env
-  end
-end
-
 ActiveRecord::Base.establish_connection(:adapter => 'sqlite3', :database => ':memory:')
 
 ActiveRecord::Base.class_eval do
@@ -26,7 +14,7 @@ class Person < ActiveRecord::Base
   is_msfte_searchable(:columns => %w(name))
 
   def self.msfte_column_indexed?(column)
-    column == "name"
+    true
   end
 end
 
@@ -125,7 +113,7 @@ describe IsMsfteSearchable::ArelMixin do
         )
       end
 
-      it "returns a scope using a LIKE query when Rails.env.test?" do
+      it "returns a scope using a LIKE query when the searched column is not indexed" do
         Person.stubs(:msfte_column_indexed?).returns(false)
         Person.msfte_name_with_any('foo bar').to_sql.must_equal(
           %{SELECT "people".* FROM "people"  WHERE (people.name LIKE '%foo bar%')}
@@ -150,7 +138,7 @@ describe IsMsfteSearchable::ArelMixin do
         )
       end
 
-      it "returns a scope using a LIKE query when Rails.env.test?" do
+      it "returns a scope using a LIKE query when the searched column is not indexed" do
         Person.stubs(:msfte_column_indexed?).returns(false)
         Person.msfte_name_with_all('foo bar').to_sql.must_equal(
           %{SELECT "people".* FROM "people"  WHERE (people.name LIKE '%foo bar%')}
@@ -175,7 +163,7 @@ describe IsMsfteSearchable::ArelMixin do
         )
       end
 
-      it "returns a scope using a LIKE query when Rails.env.test?" do
+      it "returns a scope using a LIKE query when the searched column is not indexed" do
         Person.stubs(:msfte_column_indexed?).returns(false)
         Person.msfte_name_with_booleans('foo bar').to_sql.must_equal(
           %{SELECT "people".* FROM "people"  WHERE (people.name LIKE '%foo bar%')}

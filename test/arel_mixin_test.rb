@@ -16,6 +16,10 @@ class Person < ActiveRecord::Base
   def self.msfte_column_indexed?(column)
     true
   end
+
+  def self.msfte_pending_changes?
+    false
+  end
 end
 
 # The SQL generated is courtesy of the sqlite adapter, so the whitespace and
@@ -113,11 +117,11 @@ describe IsMsfteSearchable::ArelMixin do
         )
       end
 
-      it "returns a scope using a LIKE query when the searched column is not indexed" do
+      it "raises an exception if the searched column is not indexed" do
         Person.stubs(:msfte_column_indexed?).returns(false)
-        Person.msfte_name_with_any('foo bar').to_sql.must_equal(
-          %{SELECT "people".* FROM "people"  WHERE (people.name LIKE '%foo bar%')}
-        )
+        Proc.new do
+          Person.msfte_name_with_any('foo bar')
+        end.must_raise IsMsfteSearchable::NoFullTextIndexError
       end
     end
 
@@ -138,11 +142,11 @@ describe IsMsfteSearchable::ArelMixin do
         )
       end
 
-      it "returns a scope using a LIKE query when the searched column is not indexed" do
+      it "raises an exception if the searched column is not indexed" do
         Person.stubs(:msfte_column_indexed?).returns(false)
-        Person.msfte_name_with_all('foo bar').to_sql.must_equal(
-          %{SELECT "people".* FROM "people"  WHERE (people.name LIKE '%foo bar%')}
-        )
+        Proc.new do
+          Person.msfte_name_with_all('foo bar')
+        end.must_raise IsMsfteSearchable::NoFullTextIndexError
       end
     end
 
@@ -163,11 +167,11 @@ describe IsMsfteSearchable::ArelMixin do
         )
       end
 
-      it "returns a scope using a LIKE query when the searched column is not indexed" do
+      it "raises an exception if the searched column is not indexed" do
         Person.stubs(:msfte_column_indexed?).returns(false)
-        Person.msfte_name_with_booleans('foo bar').to_sql.must_equal(
-          %{SELECT "people".* FROM "people"  WHERE (people.name LIKE '%foo bar%')}
-        )
+        Proc.new do
+          Person.msfte_name_with_any('foo bar')
+        end.must_raise IsMsfteSearchable::NoFullTextIndexError
       end
     end
   end

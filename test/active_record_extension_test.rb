@@ -5,6 +5,10 @@ describe IsMsfteSearchable::ActiveRecordExtension do
     ActiveRecord::Base.must_respond_to(:is_msfte_searchable)
   end
 
+  it "extends ActiveRecord::Base with an msfte_pending_changes? method" do
+    ActiveRecord::Base.must_respond_to(:msfte_pending_changes?)
+  end
+
   class FakeActiveRecord
     def self.table_name
       'people'

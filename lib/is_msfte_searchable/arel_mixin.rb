@@ -50,6 +50,7 @@ module IsMsfteSearchable
         column = options.fetch(:column, '*')
         if msfte_column_indexed?(column)
           until !msfte_pending_changes? do
+            sleep 1
           end
           msfte_contains(query, options)
         else

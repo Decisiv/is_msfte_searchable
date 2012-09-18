@@ -18,6 +18,7 @@ module IsMsfteSearchable
       end
 
       def msfte_column_indexed?(column)
+        # Any column in this table full-text indexed?
         sql_statement =
           <<-stmt
             select count(*)
@@ -26,10 +27,23 @@ module IsMsfteSearchable
               on c.[object_id] = fic.[object_id]
               and c.[column_id] = fic.[column_id]
             where OBJECT_ID('#{table_name}') = fic.[object_id]
-            and name = '#{column}'
           stmt
+
+        # Search for an actual column name if given.
+        sql_statement << " and name = '#{column}'" unless column == '*'
+
         value = connection.select_value(sql_statement)
         value.to_i == 1
+      end
+
+      # Query the object properties of the current table.
+      # TableFulltextPendingChanges returns the number of pending changes.
+      # See: http://technet.microsoft.com/en-us/library/ms188390.aspx
+      def msfte_pending_changes?
+        sql_statement =
+          %|select cast(OBJECTPROPERTYEX(OBJECT_ID('#{table_name}'), 'TableFulltextPendingChanges') as varchar(10))|
+        value = connection.select_value(sql_statement)
+        value.to_i != 0
       end
     end
   end

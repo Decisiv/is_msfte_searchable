@@ -27,20 +27,17 @@ module IsMsfteSearchable
         msfte_columns.each do |c|
           scope "msfte_#{c}_with_any".to_sym, lambda { |query|
             return {} if query.blank?
-            return msfte_like_bailout(c, query) unless msfte_column_indexed?(c)
-            msfte_contains(msfte_search_string(query, 'OR'), :column => c)
+            msfte_try_contains(msfte_search_string(query, 'OR'), :column => c)
           }
 
           scope "msfte_#{c}_with_all".to_sym, lambda { |query|
             return {} if query.blank?
-            return msfte_like_bailout(c, query) unless msfte_column_indexed?(c)
-            msfte_contains(msfte_search_string(query, 'AND'), :column => c)
+            msfte_try_contains(msfte_search_string(query, 'AND'), :column => c)
           }
 
           scope "msfte_#{c}_with_booleans".to_sym, lambda { |query|
             return {} if query.blank?
-            return msfte_like_bailout(c, query) unless msfte_column_indexed?(c)
-            msfte_contains(query, :column => c, :quote => true)
+            msfte_try_contains(query, :column => c, :quote => true)
           }
         end
       end
@@ -48,6 +45,18 @@ module IsMsfteSearchable
 
     module ClassMethods
       private
+
+      def msfte_try_contains(query, options={})
+        column = options.fetch(:column, '*')
+        if msfte_column_indexed?(column)
+          until !msfte_pending_changes? do
+            sleep 1
+          end
+          msfte_contains(query, options)
+        else
+          raise NoFullTextIndexError, "column '#{column}' is not full-text indexed"
+        end
+      end
 
       def msfte_like_bailout(column, query)
         { :conditions => "#{table_name}.#{column} LIKE '%#{msfte_quote(query)}%'" }
